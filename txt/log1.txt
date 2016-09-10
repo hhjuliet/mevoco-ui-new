@@ -1,0 +1,8 @@
+send success!
+send message :{"org.zstack.header.image.APIAddImageMsg":{"backupStorageUuids":["
+ec224f44216f4bd1863e3ce1cebed4c0"],"description":"","format":"qcow2","headers":{
+"replyTo":null,"noReply":"false","correlationId":"d81f1043925b43f8ae7e662c65df69
+40"},"id":"d81f1043925b43f8ae7e662c65df6940","meidaType":"RootVolumeTemplate","n
+ame":"test3","platform":"Linux","serviceId":"api.portal","session":{"callid":"ap
+i-OLK7rwHH","uuid":"ce80a5c292564753a24fb4b8c1091cfc"},"system":false,"url":"htt
+p://download.zstack.org/templates/zstack-image-1.4.qcow2"}}
