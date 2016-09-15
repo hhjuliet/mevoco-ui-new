@@ -16,8 +16,10 @@ class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 
 	@Override
 	void configureMessageBroker(MessageBrokerRegistry messageBrokerRegistry) {
+		//queue and topic both need here
 		messageBrokerRegistry.enableSimpleBroker "/queue", "/topic"
 		messageBrokerRegistry.setApplicationDestinationPrefixes "/app"
+		messageBrokerRegistry.setUserDestinationPrefix("/user")
 	}
 
 	@Override

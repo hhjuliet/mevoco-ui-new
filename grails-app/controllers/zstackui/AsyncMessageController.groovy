@@ -1,46 +1,40 @@
 package zstackui
 import com.google.common.eventbus.DeadEvent;
 import com.google.common.eventbus.EventBus;
-import com.google.common.eventbus.Subscribe;
+import com.google.common.eventbus.Subscribe
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping
 import org.springframework.messaging.handler.annotation.SendTo
+import org.springframework.messaging.simp.annotation.SendToUser
+import org.springframework.messaging.simp.SimpMessagingTemplate
+
 import static grails.async.Promises.*
 
 class AsyncMessageController{
-	
+
 	def asyncRabbitmqService;
-	def messageEvent;
-	def message = '''
-{
-  "org.zstack.header.identity.APILogInByAccountMsg": {
-    "accountName": "admin",
-    "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"
-  }
-}'''
-	def index(){
-		
+	private final SimpMessagingTemplate messagingTemplate;
+
+	@Autowired
+	public AsyncMessageController(SimpMessagingTemplate messagingTemplate){
+		this.messagingTemplate = messagingTemplate
 	}
 
-	@MessageMapping("/sendMessage")
-    public void sendMessage(String sendMessage) {
+	@MessageMapping("/message")
+    protected void send(String sendMessage) {
 		def reply;
-		asyncRabbitmqService = new AsyncRabbitmqService();
+		asyncRabbitmqService = new AsyncRabbitmqService(this);
 		if (sendMessage) {
 			asyncRabbitmqService.sendMessage(sendMessage)
 		}else{
 			reply = 'failed'
 		}
 	}
-	
-	
-	@Subscribe
+
+
 	def void messageListener(MessageEvent event){
 		println "===================================================================="
-		println "event1 is: "+event.getMsg();
-		//println "message is : "+messageReturn(event.getMsg())
-	}
-	
-	def String messageReturn(String message){
-		return message
+		println "event3 is: "+event.getMessage();
+		this.messagingTemplate.convertAndSend("/topic/message", event.getMessage())
 	}
 }

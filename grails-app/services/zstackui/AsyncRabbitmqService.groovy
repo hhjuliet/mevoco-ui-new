@@ -1,19 +1,10 @@
 package zstackui
 
-import java.io.IOException
-
 import com.rabbitmq.client.*
 import grails.core.GrailsApplication
-import grails.transaction.Transactional
 import groovy.json.*
 
-import com.google.common.eventbus.*;
-import com.google.common.eventbus.*;
-import com.google.common.*;
-import static grails.async.Promises.*
-
-
-class AsyncRabbitmqService implements CallBackService {
+class AsyncRabbitmqService{
 
     static scope = "singleton"
 
@@ -28,12 +19,18 @@ class AsyncRabbitmqService implements CallBackService {
 	//message correlative id
 	def corrId
 	def Host = "172.20.11.81"
-	def replyMessage
 	def consumer
-	
+	private final AsyncMessageController asyncMessageController
+	private CallBackService callBackService
+	private static test;
+	def sendOrRollback;
+
 	def initialize(){}
 	
 	public AsyncRabbitmqService(){
+		test = 0;
+
+		//this.asyncMessageController = asyncMessageController;
 		this.P2P_EXCHANGE = "P2P"
 		this.REQUEST_QUEUE_NAME = "zstack.message.api.portal"
 		this.UuidService = new UuidService();
@@ -66,11 +63,13 @@ class AsyncRabbitmqService implements CallBackService {
 	}
 	
 
-    String sendMessage(String msg){
+    String sendMessage(CallBackService callBackService,String msg,UuidService uuidService,Boolean sendOrRollback){
+		this.callBackService = callBackService;
+		this.sendOrRollback = sendOrRollback;
+		corrId = uuidService.getUuid();
 		
-		System.out.println("original1 message is: " + msg);
-		parser = new JsonSlurper()
-		corrId = UUID.randomUUID().toString().replace("-", "")
+		//System.out.println("original1 message is: " + msg);
+		parser = new JsonSlurper();
 		
 		if(!msg){
 			println "you cannot pass an empty message to me!"
@@ -102,25 +101,29 @@ class AsyncRabbitmqService implements CallBackService {
 				channel.basicConsume(REPLY_QUEUE_NAME, true, consumer)
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery()
 				println "message received!"
-				//channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				MessageHandler(new String(delivery.getBody()));
+
 			}
 		}).start();
 		
 		System.out.println("send message success!");
-		System.out.println("===============================================================================");
+		System.out.println("=============================================================================================");
     }
 	
 	def void MessageHandler(String message){
 		System.out.println("async message is: "+message);
-		EventBus eventBus = new EventBus("example-events");
-		AsyncMessageController listener = new AsyncMessageController();
-		eventBus.register(listener);
-		def messageEvent = new MessageEvent(corrId,message);
-		//messageEvent.merge()
-		eventBus.post(messageEvent);
-		//eventBus.post(new MessageEvent(100));
-		//listener.messageReturn();
 		println "===================================================================received!"
+
+		println "【important!】test is :"+test;
+		if (test == 1){
+			callBackService.failed();
+		}else if (sendOrRollback == false){
+			callBackService.failed();
+		}else {
+			callBackService.success();
+		}
+		test++;
+
 	}
 }
