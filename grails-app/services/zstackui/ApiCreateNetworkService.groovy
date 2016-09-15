@@ -12,8 +12,6 @@ class ApiCreateNetworkService{
     ApiCreateNetworkService(ApiCreateNetworkController apiCreateNetworkController,NetworkCreateMessage networkCreateMessage){
         this.apiCreateNetworkController = apiCreateNetworkController;
         this.networkCreateMessage = networkCreateMessage;
-        //in the beginning
-        networkMessage = CreateL2VlanNetworkMsg();
         i = 0;
         println "apinetworkservice started!"
         operations = [];
@@ -23,42 +21,44 @@ class ApiCreateNetworkService{
 
     def sendMessage() {
 
+        networkMessage = CreateL2VlanNetworkMsg();
+        rollbackMessage = CreateL2VlanNetworkMsg();
         operations.add(new ApiCreateNetworkCallBackOPService(apiCreateNetworkController,new CallBackService() {
             @Override
             void success() {
                 println "callback success0"
-                networkMessage = CreateL3VlanNetworkMsg();
                 startNextOP()
             }
 
             @Override
             void failed() {
                 println "callback failed0"
-                rollbackMessage = CreateL3VlanNetworkMsg();
                 returnLastOP();
             }
-        })
+        },networkMessage,rollbackMessage)
         )
 
+        networkMessage = CreateL3VlanNetworkMsg();
+        rollbackMessage = CreateL3VlanNetworkMsg();
         operations.add(new ApiCreateNetworkCallBackOPService(apiCreateNetworkController,new CallBackService() {
             @Override
             void success() {
                 println "callback success1"
-                networkMessage = CreateL3VlanNetworkMsg();
                 println startNextOP()
             }
 
             @Override
             void failed() {
                 println "callback failed1"
-                rollbackMessage = CreateL3VlanNetworkMsg();
                 println returnLastOP();
             }
-        })
+        },networkMessage,rollbackMessage)
         )
 
+        //in the beginning
+        networkMessage = CreateL2VlanNetworkMsg();
+        rollbackMessage = CreateL2VlanNetworkMsg();
         println startNextOP();
-        //println "apinetworkservice send message!"
     }
 
 
@@ -76,6 +76,7 @@ class ApiCreateNetworkService{
                        "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"
                       }
                  }'''
+        println "L2 is called"
     }
 
     def String CreateL3VlanNetworkMsg(){
@@ -91,32 +92,34 @@ class ApiCreateNetworkService{
                        "password": "b109f3bbbc244eb82441917ed06d618b9008dd09b3befd1b5e07394c706a8bb980b1d7785e5976ec049b46df5f1326af5a2ea6d103fd07c95385ffab0cacbc86"
                       }
                  }'''
+        println "L3 is called"
     }
 
     def String startNextOP(){
-        println "【important!】i is :"+i
-        ApiCreateNetworkCallBackOPService op = this.operations.get(i);
-        op.sendMessage(networkMessage,true);
-
-        if (i == this.operations.size()-1){
+        println "[important!]i is :"+i
+        if (i >= this.operations.size()){
             return reportAllOperationsComplete();
-        }else{
+        }
+        ApiCreateNetworkCallBackOPService op = this.operations.get(i);
+        op.sendMessage(true);
+        if (i < this.operations.size()-1){
             i++;
             return "i++";
         }
+        return "the last step!"
 
     }
 
     def String returnLastOP(){
-        println "【important!】i is :"+i
+        println "operations"+i+" is called!"
         if (i >= this.operations.size()){
             return "all operations finished,dont need rollback!"
         }
-        if (i<0){
+        if (i < 0){
             return  "rollback finished!"
         }
         ApiCreateNetworkCallBackOPService op = this.operations.get(i);
-        op.sendMessage(rollbackMessage,false);
+        op.sendMessage(false);
         i--;
     }
 

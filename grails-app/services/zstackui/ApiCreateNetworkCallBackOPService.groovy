@@ -8,18 +8,27 @@ class ApiCreateNetworkCallBackOPService implements CallBackService{
     private UuidService uuidService
     private AsyncRabbitmqService asyncRabbitmqService
     private NetworkCreateMessage networkCreateMessage
+    private String networkMessage;
+    private String rollbackMessage;
 
-    ApiCreateNetworkCallBackOPService(ApiCreateNetworkController apiCreateNetworkController,CallBackService service){
+    ApiCreateNetworkCallBackOPService(ApiCreateNetworkController apiCreateNetworkController,CallBackService service,String networkMessage,String rollbackMessage){
         this.apiCreateNetworkController = apiCreateNetworkController;
         this.service = service;
+        this.rollbackMessage = rollbackMessage;
+        this.networkMessage = networkMessage;
         //uuidService = new UuidService();
     };
 
-    def sendMessage(String message,Boolean sendOrRollback){
+    def sendMessage(Boolean sendOrRollback){
         this.uuidService = new UuidService();
         asyncRabbitmqService = new AsyncRabbitmqService();
         //attach message information,send message
-        asyncRabbitmqService.sendMessage(this,message,uuidService,sendOrRollback)
+        if (sendOrRollback){
+            asyncRabbitmqService.sendMessage(this,this.networkMessage,uuidService,sendOrRollback)
+        }else {
+            asyncRabbitmqService.sendMessage(this,this.rollbackMessage,uuidService,sendOrRollback)
+        }
+
     }
 
     @Override

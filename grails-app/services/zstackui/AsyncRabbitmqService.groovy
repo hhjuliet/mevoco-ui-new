@@ -115,7 +115,7 @@ class AsyncRabbitmqService{
 		System.out.println("async message is: "+message);
 		println "===================================================================received!"
 
-		println "【important!】test is :"+test;
+		println "[important!]test is :"+test;
 		if (test == 1){
 			callBackService.failed();
 		}else if (sendOrRollback == false){
