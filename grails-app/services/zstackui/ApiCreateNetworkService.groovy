@@ -10,7 +10,8 @@ class ApiCreateNetworkService{
     private NetworkCreateMessage networkCreateMessage;
     private ApiCreateNetworkController apiCreateNetworkController;
     private static int i;
-    private Map object1;
+    private String
+    private static Map object1;
     def object2;
 
     ApiCreateNetworkService(ApiCreateNetworkController apiCreateNetworkController,NetworkCreateMessage networkCreateMessage){
@@ -31,7 +32,7 @@ class ApiCreateNetworkService{
                 println "l2create success"
                 def jsonSlurper = new JsonSlurper()
                 def object = jsonSlurper.parseText(replyMessage)
-                startNextOP(CreateL3VlanNetworkMsg((Map)object));
+                startNextOP(CreateL3VlanNetworkMsg((Map)object),"");
             }
 
             @Override
@@ -39,7 +40,7 @@ class ApiCreateNetworkService{
                 println "l2create failed"
                 def jsonSlurper = new JsonSlurper()
                 def object = jsonSlurper.parseText(replyMessage)
-                returnLastOP("");
+                returnLastOP("","");
             }
         })
         )
@@ -50,13 +51,13 @@ class ApiCreateNetworkService{
                 println "l3create success"
                 def jsonSlurper = new JsonSlurper()
                 def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(AddDnsToL3NetworkMsg((Map)object))
+                println startNextOP(AddDnsToL3NetworkMsg((Map)object),"")
             }
 
             @Override
             void failed(String replyMessage) {
                 println "l3create failed"
-                println returnLastOP(CreateL2VlanNetworkRollbackMsg());
+                println returnLastOP("",CreateL2VlanNetworkRollbackMsg());
             }
         })
         )
@@ -67,7 +68,7 @@ class ApiCreateNetworkService{
                 println "addDns success"
                 def jsonSlurper = new JsonSlurper()
                 def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(AddIpRangeMsg((Map)object))
+                println startNextOP(AddIpRangeMsg((Map)object),"")
             }
 
             @Override
@@ -118,7 +119,7 @@ class ApiCreateNetworkService{
                 println "attachNetworkServiceToL3NetworkMsg success"
                 def jsonSlurper = new JsonSlurper()
                 def object = jsonSlurper.parseText(replyMessage)
-                println reportAllOperationsComplete(replyMessage);
+                reportAllOperationsComplete(replyMessage);
             }
 
             @Override
