@@ -65,6 +65,11 @@ class SyncRabbitmqService {
         def body = obj.values()[0]
         body.put("serviceId", "api.portal")
         body.put("id", corrId)
+		
+		println "request queue name is: "+this.REQUEST_QUEUE_NAME;
+		println "exchange name is: "+this.P2P_EXCHANGE;
+		println "corrid is: "+this.corrId;
+		
         def bodyHeaders = ["replyTo": REPLY_QUEUE_NAME, "noReply": "false", "correlationId": corrId]
         body.put("headers", bodyHeaders)
         message = JsonOutput.toJson(obj)

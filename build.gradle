@@ -41,6 +41,9 @@ dependencyManagement {
 }
 
 dependencies {
+	compile 'org.springframework.session:spring-session:1.2.2.RELEASE'
+	compile group: 'com.google.guava', name: 'guava', version: '19.0'
+	compile group: 'com.jcabi', name: 'jcabi-aspects', version: '0.22.5'
     compile 'com.rabbitmq:amqp-client:3.6.5'
     compile "org.springframework.boot:spring-boot-starter-logging"
     compile "org.springframework.boot:spring-boot-autoconfigure"
