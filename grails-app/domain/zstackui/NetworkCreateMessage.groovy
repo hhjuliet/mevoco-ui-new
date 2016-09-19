@@ -2,18 +2,18 @@ package zstackui
 
 class NetworkCreateMessage {
     def name;
-    def desciption;
-    def L2type;
-    def L3type;
+    def description;
+    def l2type;
+    def l3type;
+    def type;
     def zoneUuid;
     def physicalInterface;
     def vlan;
-    def l2NetworkUuid;
     def system;
     def sessionUuid;
-    def sessionCallid;
+    def callid;
     def dns;
-    def IpRangeName;
+    def ipRangeName;
     def startIp;
     def endIp;
     def gateway;

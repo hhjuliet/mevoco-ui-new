@@ -18,16 +18,15 @@ class ApiCreateNetworkController {
     }
 
     @MessageMapping("/networkmessage")
-    @SendTo("/topic/networkmessage")
     protected String send(NetworkCreateMessage networkCreateMessage) {
-        //println "message is :"+networkCreateMessage.getName()
-        //println "message password is : "+networkCreateMessage.getPassword()
         println "enter..."
         apiCreateNetworkService = new ApiCreateNetworkService(this,networkCreateMessage)
         apiCreateNetworkService.sendMessage()
-        //println "enter..."
-        return "success!"
     }
 
-    def index() { }
+    def void messageListener(String message){
+        println "===================================================================="
+        this.messagingTemplate.convertAndSend("/topic/networkmessage", message)
+    }
+
 }

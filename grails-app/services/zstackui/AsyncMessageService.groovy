@@ -25,7 +25,7 @@ class AsyncMessageService {
 
     def shareMap = [:]
 
-	//初始化exchange,channel,queue
+	//?????exchange,channel,queue
     def initialize() {
         P2P_EXCHANGE = "P2P"
 		BROADCAST_EXCHANGE = "BROADCAST"
@@ -95,7 +95,7 @@ class AsyncMessageService {
 		this.consumer = new QueueingConsumer(channel)
 	}
 	
-	
+
 	@Async
 	def String send(String message) {
 		
@@ -106,7 +106,7 @@ class AsyncMessageService {
 			println "you cannot pass an empty message to me!"
 			return "no message"
 		}
-		//消息头部放入返回消息的queue name(routingkey)和messageId
+
 		def obj = parser.parseText(message)
 		def body = obj.values()[0]
 		body.put("serviceId", "api.portal")
@@ -122,7 +122,7 @@ class AsyncMessageService {
 		
 		println "send message :"+message
 
-		//发送消息
+		//???????
 		BasicProperties props = new AMQP.BasicProperties.Builder()
 				.correlationId(corrId)
 				.replyTo(REPLY_QUEUE_NAME)
@@ -165,7 +165,6 @@ class AsyncMessageService {
 		connection.close()
 	}
 
-	//以后还可能有别的属性，先只有一个msg
 	public class Envelope{
 		def msg;
 		Envelope(){}
@@ -173,7 +172,7 @@ class AsyncMessageService {
 			this.msg = msg
 		}
 	}
-	
+
 	@Async
 	public messageHandler(){
 		

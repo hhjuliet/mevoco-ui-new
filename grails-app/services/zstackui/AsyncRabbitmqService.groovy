@@ -10,8 +10,8 @@ class AsyncRabbitmqService{
 
     GrailsApplication grailsApplication
 
-	def P2P_EXCHANGE, BROADCAST_EXCHANGE, REPLY_QUEUE_NAME, REQUEST_QUEUE_NAME
-    def UuidService
+	def P2P_EXCHANGE, BROADCAST_EXCHANGE, REPLY_QUEUE_NAME, REQUEST_QUEUE_NAME,API_EVENT_QUEUE_PREFIX;
+	def UuidService
     def lastMessage
 	def connection
 	def channel
@@ -24,6 +24,7 @@ class AsyncRabbitmqService{
 	private CallBackService callBackService
 	private static test;
 	def sendOrRollback;
+	def API_EVENT_QUEUE_BINDING_KEY;
 
 	def initialize(){}
 	
@@ -35,7 +36,10 @@ class AsyncRabbitmqService{
 		this.REQUEST_QUEUE_NAME = "zstack.message.api.portal"
 		this.UuidService = new UuidService();
 		this.REPLY_QUEUE_NAME = "zstack.newui.api.event." + UuidService.getUuid()
+		def api_event_queue_name = API_EVENT_QUEUE_PREFIX+UuidService.getUuid();
 		this.BROADCAST_EXCHANGE = "BROADCAST"
+		this.API_EVENT_QUEUE_BINDING_KEY = "key.event.API.API_EVENT"
+		this.API_EVENT_QUEUE_PREFIX = "zstack.ui.api.event."
 
 		ConnectionFactory factory = new ConnectionFactory();
 		factory.setHost(Host);
@@ -57,8 +61,12 @@ class AsyncRabbitmqService{
 			this.channel.exchangeDeclare(BROADCAST_EXCHANGE, "topic", true, false, ["alternate-exchange":NO_ROUTE])
 		}
 
+		this.channel.queueDeclare(api_event_queue_name, false, false, true, null);
 		this.channel.queueDeclare(REPLY_QUEUE_NAME, false, false, true, null);
-		this.channel.queueBind(REPLY_QUEUE_NAME, P2P_EXCHANGE, REPLY_QUEUE_NAME);
+
+		this.channel.queueBind(REPLY_QUEUE_NAME,P2P_EXCHANGE,REPLY_QUEUE_NAME)
+		this.channel.queueBind(REPLY_QUEUE_NAME, BROADCAST_EXCHANGE, API_EVENT_QUEUE_BINDING_KEY);
+
 		this.consumer = new QueueingConsumer(channel)
 	}
 	
@@ -103,7 +111,6 @@ class AsyncRabbitmqService{
 				println "message received!"
 				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				MessageHandler(new String(delivery.getBody()));
-
 			}
 		}).start();
 		
@@ -112,18 +119,30 @@ class AsyncRabbitmqService{
     }
 	
 	def void MessageHandler(String message){
-		System.out.println("async message is: "+message);
-		println "===================================================================received!"
 
-		println "[important!]test is :"+test;
-		if (test == 1){
-			callBackService.failed();
-		}else if (sendOrRollback == false){
-			callBackService.failed();
-		}else {
-			callBackService.success();
+		println "received message is :"+message;
+
+		def jsonSlurper = new JsonSlurper()
+		def object = jsonSlurper.parseText(message).values()[0]
+
+		println "object is :"+object;
+		println "object success is: "+object.success;
+
+		if (sendOrRollback == false){
+			println "rollbacking..."
+			callBackService.failed(message);
+		}else if (object.success == false){
+			println "rollbacking..."
+			callBackService.failed(message);
+		}else if (object.success == true){
+			println "rabbitmq receive message success..."
+			callBackService.success(message);
+		}else{
+			println "unknown rabbitmq reply message"
 		}
-		test++;
-
 	}
 }
+
+
+
+

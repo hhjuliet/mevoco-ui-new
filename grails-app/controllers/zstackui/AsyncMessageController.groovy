@@ -37,4 +37,6 @@ class AsyncMessageController{
 		println "event3 is: "+event.getMessage();
 		this.messagingTemplate.convertAndSend("/topic/message", event.getMessage())
 	}
+
+
 }
