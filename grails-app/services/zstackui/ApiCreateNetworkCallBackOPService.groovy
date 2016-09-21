@@ -1,14 +1,14 @@
 package zstackui
 
-class ApiCreateNetworkCallBackOPService implements CallBackService{
+class ApiCreateNetworkCallBackOPService{
     def message;
-    private CallBackService service;
+    //private CallBackService service;
     private UuidService uuidService
     private AsyncRabbitmqService asyncRabbitmqService
 
-    ApiCreateNetworkCallBackOPService(CallBackService service){
+    /*ApiCreateNetworkCallBackOPService(CallBackService service){
         this.service = service;
-    };
+    };*/
 
     def sendMessage(String sendMessage,Boolean sendOrRollback){
         this.uuidService = new UuidService();
@@ -17,13 +17,11 @@ class ApiCreateNetworkCallBackOPService implements CallBackService{
         asyncRabbitmqService.sendMessage(this,sendMessage,uuidService,sendOrRollback)
     }
 
-    @Override
-    def void success(String replyMessage){
-        service.success(replyMessage)
+    def void success(){
+        service.success()
     }
 
-    @Override
-    def void failed(String replyMessage){
-        service.failed(replyMessage)
+    def void failed(){
+        service.failed()
     }
 }

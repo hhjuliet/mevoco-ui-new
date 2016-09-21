@@ -21,17 +21,17 @@ class AsyncRabbitmqService{
 	def Host = "172.20.11.81"
 	def consumer
 	private final AsyncMessageController asyncMessageController
-	private CallBackService callBackService
-	private static test;
+	private RabbitmqCallbackService callBackService
+	private HashMap<String,RabbitmqCallbackService> envelops;
 	def sendOrRollback;
 	def API_EVENT_QUEUE_BINDING_KEY;
+
 
 	def initialize(){}
 	
 	public AsyncRabbitmqService(){
-		test = 0;
+		envelops = new HashMap<String,RabbitmqCallbackService>();
 
-		//this.asyncMessageController = asyncMessageController;
 		this.P2P_EXCHANGE = "P2P"
 		this.REQUEST_QUEUE_NAME = "zstack.message.api.portal"
 		this.UuidService = new UuidService();
@@ -68,16 +68,19 @@ class AsyncRabbitmqService{
 		this.channel.queueBind(REPLY_QUEUE_NAME, BROADCAST_EXCHANGE, API_EVENT_QUEUE_BINDING_KEY);
 
 		this.consumer = new QueueingConsumer(channel)
+		parser = new JsonSlurper();
 	}
 	
 
-    String sendMessage(CallBackService callBackService,String msg,UuidService uuidService,Boolean sendOrRollback){
+    String sendMessage(String msg,UuidService uuidService,Boolean sendOrRollback,RabbitmqCallbackService callBackService){
 		this.callBackService = callBackService;
 		this.sendOrRollback = sendOrRollback;
 		corrId = uuidService.getUuid();
-		
+		synchronized (envelops){
+			envelops.put(corrId,callBackService);
+		}
+
 		//System.out.println("original1 message is: " + msg);
-		parser = new JsonSlurper();
 		
 		if(!msg){
 			println "you cannot pass an empty message to me!"
@@ -109,7 +112,7 @@ class AsyncRabbitmqService{
 				channel.basicConsume(REPLY_QUEUE_NAME, true, consumer)
 				QueueingConsumer.Delivery delivery = consumer.nextDelivery()
 				println "message received!"
-				channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
+				//channel.basicAck(delivery.getEnvelope().getDeliveryTag(), false);
 				MessageHandler(new String(delivery.getBody()));
 			}
 		}).start();
@@ -122,24 +125,20 @@ class AsyncRabbitmqService{
 
 		println "received message is :"+message;
 
-		def jsonSlurper = new JsonSlurper()
-		def object = jsonSlurper.parseText(message).values()[0]
-
-		println "object is :"+object;
-		println "object success is: "+object.success;
-
-		if (sendOrRollback == false){
-			println "rollbacking..."
-			callBackService.failed(message);
-		}else if (object.success == false){
-			println "rollbacking..."
-			callBackService.failed(message);
-		}else if (object.success == true){
-			println "rabbitmq receive message success..."
-			callBackService.success(message);
-		}else{
-			println "unknown rabbitmq reply message"
+		def obj = parser.parseText(message).values()[0];
+		//def bodyHeaders = obj["headers"];
+		synchronized (envelops){
+			if (obj["apiId"]){
+				envelops.get(obj["apiId"]).success(message);
+				envelops.remove(obj["apiId"]);
+			}else if (obj["headers"]["correlationId"]){
+				envelops.get(obj["headers"]["correlationId"]).success(message);
+				envelops.remove(obj["headers"]["correlationId"]);
+			}else{
+				println "rabbitmq cannot get message correlativeId";
+			}
 		}
+
 	}
 }
 

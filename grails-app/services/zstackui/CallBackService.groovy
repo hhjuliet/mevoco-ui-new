@@ -1,9 +1,9 @@
 package zstackui
 
 
-interface CallBackService {
+interface Callback {
 
     //def void MessageHandler(String message);
-    def void success(String replyMessage)
-    def void failed(String replyMessage)
+    def void success()
+    def void failed(int i)
 }

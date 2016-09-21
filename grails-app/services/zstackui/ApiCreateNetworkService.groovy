@@ -13,6 +13,8 @@ class ApiCreateNetworkService{
     private String
     private static Map object1;
     def object2;
+	AsyncRabbitmqService asyncRabbitmqService;
+	def parser;
 
     ApiCreateNetworkService(ApiCreateNetworkController apiCreateNetworkController,NetworkCreateMessage networkCreateMessage){
         this.apiCreateNetworkController = apiCreateNetworkController;
@@ -20,120 +22,182 @@ class ApiCreateNetworkService{
         i = 0;
         println "apinetworkservice started!"
         operations = [];
+		asyncRabbitmqService = new AsyncRabbitmqService();
+		parser = new JsonSlurper();
+
     }
 
 
 
     def sendMessage() {
+        new ScopeService() {
+            String l2Uuid;
+            String l3Uuid;
+			String networkUuid;
 
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "l2create success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                startNextOP(CreateL3VlanNetworkMsg((Map)object),"");
+            void setup() {
+                addStep(new Runner() {
+                    @Override
+                    void run(Callback cb) {
+
+                        UuidService uuidService = new UuidService();
+                        asyncRabbitmqService.sendMessage(CreateL2VlanNetworkMsg(),uuidService,true,new RabbitmqCallbackService(){
+                            @Override
+                            void success(String replyMessage) {
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									l2Uuid = obj["inventory"]["uuid"];
+									cb.success();
+								}else{
+									cb.failed(2)
+								}
+
+                            }
+
+                            @Override
+                            void failed(String replymesssge) {
+                                cb.failed(1);
+                            }
+                        })
+
+                    }
+                })
+
+                addStep(new Runner() {
+                    @Override
+                    void run(Callback cb) {
+                        // create l3 network
+						UuidService uuidService = new UuidService();
+						asyncRabbitmqService.sendMessage(CreateL3VlanNetworkMsg(l2Uuid),uuidService,true,new RabbitmqCallbackService(){
+							@Override
+							void success(String replyMessage) {
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									l3Uuid = obj["inventory"]["uuid"];
+									cb.success();
+								}else{
+									cb.failed(2)
+								}
+							}
+
+							@Override
+							void failed(String replymesssge) {
+								cb.failed(1);
+							}
+						})
+                    }
+                })
+
+				addStep(new Runner() {
+					@Override
+					void run(Callback cb) {
+						// create l3 network
+						UuidService uuidService = new UuidService();
+						asyncRabbitmqService.sendMessage(AddDnsToL3NetworkMsg(l3Uuid),uuidService,true,new RabbitmqCallbackService(){
+							@Override
+							void success(String replyMessage) {
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									cb.success();
+								}else{
+									cb.failed(2)
+								}
+							}
+
+							@Override
+							void failed(String replymesssge) {
+								cb.failed(1);
+							}
+						})
+					}
+				})
+
+				addStep(new Runner() {
+					@Override
+					void run(Callback cb) {
+						// create l3 network
+						UuidService uuidService = new UuidService();
+						asyncRabbitmqService.sendMessage(AddIpRangeMsg(l3Uuid),uuidService,true,new RabbitmqCallbackService(){
+							@Override
+							void success(String replyMessage) {
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									cb.success();
+								}else{
+									cb.failed(2)
+								}
+							}
+
+							@Override
+							void failed(String replymesssge) {
+								cb.failed(1);
+							}
+						})
+					}
+				})
+
+				addStep(new Runner() {
+					@Override
+					void run(Callback cb) {
+						// create l3 network
+						UuidService uuidService = new UuidService();
+						asyncRabbitmqService.sendMessage(QueryNetworkServiceProviderMsg(),uuidService,true,new RabbitmqCallbackService(){
+							@Override
+							void success(String replyMessage) {
+
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									networkUuid = obj["inventories"][1]["uuid"];
+									cb.success();
+								}else{
+									cb.failed(2)
+								}
+
+							}
+
+							@Override
+							void failed(String replymesssge) {
+								cb.failed(1);
+							}
+						})
+					}
+				})
+
+				addStep(new Runner() {
+					@Override
+					void run(Callback cb) {
+						// create l3 network
+						UuidService uuidService = new UuidService();
+						asyncRabbitmqService.sendMessage(AttachNetworkServiceToL3NetworkMsg(l3Uuid,networkUuid),uuidService,true,new RabbitmqCallbackService(){
+							@Override
+							void success(String replyMessage) {
+								def obj = parser.parseText(replyMessage).values()[0];
+								if (obj["success"] == true){
+									reportAllOperationsComplete(replyMessage)
+								}else{
+									cb.failed(2)
+								}
+							}
+
+							@Override
+							void failed(String replymesssge) {
+								cb.failed(1);
+							}
+						})
+					}
+				})
             }
 
-            @Override
-            void failed(String replyMessage) {
-                println "l2create failed"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                returnLastOP("","");
-            }
-        })
-        )
-
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "l3create success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(AddDnsToL3NetworkMsg((Map)object),"")
+            void done() {
+                println "hello world"
             }
 
-            @Override
-            void failed(String replyMessage) {
-                println "l3create failed"
-                println returnLastOP("",CreateL2VlanNetworkRollbackMsg());
-            }
-        })
-        )
-
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "addDns success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(AddIpRangeMsg((Map)object),"")
+            void error(int i) {
+                println "error " + i
             }
 
-            @Override
-            void failed(String replyMessage) {
-                println "addDns failed1"
-                println returnLastOP(CreateL3VlanNetworkRollbackMsg());
-            }
-        })
-        )
+        }.start();
 
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "addiprange success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(QueryNetworkServiceProviderMsg((Map)object))
-            }
-
-            @Override
-            void failed(String replyMessage) {
-                println "addiprange failed1"
-                println returnLastOP("");
-            }
-        })
-        )
-
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "queryNetworkServiceProviderMsg success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                println startNextOP(AttachNetworkServiceToL3NetworkMsg((Map)object))
-            }
-
-            @Override
-            void failed(String replyMessage) {
-                println "queryNetworkServiceProviderMsg failed1"
-                println returnLastOP("");
-            }
-        })
-        )
-
-        operations.add(new ApiCreateNetworkCallBackOPService(new CallBackService() {
-            @Override
-            void success(String replyMessage) {
-                println "attachNetworkServiceToL3NetworkMsg success"
-                def jsonSlurper = new JsonSlurper()
-                def object = jsonSlurper.parseText(replyMessage)
-                reportAllOperationsComplete(replyMessage);
-            }
-
-            @Override
-            void failed(String replyMessage) {
-                println "attachNetworkServiceToL3NetworkMsg failed1"
-                println returnLastOP("");
-            }
-        })
-        )
-
-        //in the beginning
-        networkMessage = CreateL2VlanNetworkMsg();
-        rollbackMessage = "";
-        println startNextOP(CreateL2VlanNetworkMsg());
     }
 
 
@@ -182,8 +246,7 @@ class ApiCreateNetworkService{
         return L2RollbackString;
     }
 
-    def String CreateL3VlanNetworkMsg(Map object){
-        this.object1 = object.values()[0];
+    def String CreateL3VlanNetworkMsg(String l2uuid){
         println "L3 is called"
 
         def apiL3vlanMsg = [:]
@@ -195,7 +258,7 @@ class ApiCreateNetworkService{
 
         createl3vlannetworkmsg.put("name",networkCreateMessage.getName());
         createl3vlannetworkmsg.put("type",networkCreateMessage.getL3type());
-        createl3vlannetworkmsg.put("l2NetworkUuid",this.object1.inventory.uuid);
+        createl3vlannetworkmsg.put("l2NetworkUuid",l2uuid);
 
         createl3vlannetworkmsg.put("physicalInterface",networkCreateMessage.getPhysicalInterface())
         createl3vlannetworkmsg.put("session",sessionMsg);
@@ -227,8 +290,7 @@ class ApiCreateNetworkService{
         return L3RollbackString;
     }
 
-    def String AddDnsToL3NetworkMsg(Map object){
-        this.object1 = object.values()[0];
+    def String AddDnsToL3NetworkMsg(String l3Uuid){
         println "AddDns is called"
         def apiAddDns = [:]
         def addDnsToL3NetworkMsg = [:];
@@ -238,7 +300,7 @@ class ApiCreateNetworkService{
         sessionMsg.put("callid",networkCreateMessage.getCallid())
 
         addDnsToL3NetworkMsg.put("dns",networkCreateMessage.getDns());
-        addDnsToL3NetworkMsg.put("l3NetworkUuid",object1.inventory.uuid);
+        addDnsToL3NetworkMsg.put("l3NetworkUuid",l3Uuid);
 
         addDnsToL3NetworkMsg.put("session",sessionMsg);
 
@@ -250,8 +312,7 @@ class ApiCreateNetworkService{
         return addDnsString;
     }
 
-    def String AddIpRangeMsg(Map object){
-        this.object1 = object.values()[0];
+    def String AddIpRangeMsg(String l3Uuid){
         println "AddIpRange is called"
         def apiAddIpRange = [:]
         def addIpRange = [:];
@@ -260,7 +321,7 @@ class ApiCreateNetworkService{
         sessionMsg.put("uuid",networkCreateMessage.getSessionUuid())
         sessionMsg.put("callid",networkCreateMessage.getCallid())
 
-        addIpRange.put("l3NetworkUuid",object1.inventory.uuid)
+        addIpRange.put("l3NetworkUuid",l3Uuid)
         addIpRange.put("name",networkCreateMessage.getStartIp())
         addIpRange.put("startIp",networkCreateMessage.getStartIp())
         addIpRange.put("endIp",networkCreateMessage.getEndIp())
@@ -276,8 +337,7 @@ class ApiCreateNetworkService{
         return addIpRangeString;
     }
 
-    def String QueryNetworkServiceProviderMsg(Map object){
-        object1 = object.values()[0];
+    def String QueryNetworkServiceProviderMsg(){
         println "QueryNetworkServiceProviderMsg is called"
         def apiQueryNetworkServiceProviderMsg = [:]
         def QueryNetworkServiceProviderMsg = [:];
@@ -301,9 +361,7 @@ class ApiCreateNetworkService{
         return queryNetworkServiceProviderMsg;
     }
 
-    def String AttachNetworkServiceToL3NetworkMsg(Map object){
-        this.object2 = object.values()[0];
-        println "AttachNetworkServiceToL3NetworkMsg object1 is :"+object1;
+    def String AttachNetworkServiceToL3NetworkMsg(String l3Uuid,String networkUuid){
         println "AttachNetworkServiceToL3NetworkMsg is called"
         def apiAttachNetworkServiceToL3NetworkMsg = [:]
         def attachNetworkServiceToL3NetworkMsg = [:];
@@ -312,9 +370,9 @@ class ApiCreateNetworkService{
         sessionMsg.put("uuid",networkCreateMessage.getSessionUuid())
         sessionMsg.put("callid",networkCreateMessage.getCallid())
 
-        attachNetworkServiceToL3NetworkMsg.put("l3NetworkUuid",object1.inventory.l3NetworkUuid);
+        attachNetworkServiceToL3NetworkMsg.put("l3NetworkUuid",l3Uuid);
         def networkService = [:]
-        networkService.put(this.object2.inventories[0].uuid,[
+        networkService.put(networkUuid,[
                                                                 "DHCP",
                                                                 "Userdata",
                                                                 "Eip"
@@ -332,32 +390,6 @@ class ApiCreateNetworkService{
     }
 
 
-    def String startNextOP(String sendMessage){
-        println "[important!]i is :"+i
-        if (i > this.operations.size()-1){
-            return "i is out of index!";
-        }
-        ApiCreateNetworkCallBackOPService op = this.operations.get(i);
-        op.sendMessage(sendMessage,true);
-        if (i < this.operations.size()-1){
-            i++;
-            return "i++";
-        }
-        return "the last step!"
-    }
-
-    def String returnLastOP(String rollbackMessage){
-        println "operations"+i+" is called!"
-        if (i >= this.operations.size()){
-            return "all operations finished,dont need rollback!"
-        }
-        if (i < 0){
-            return  "rollback finished!"
-        }
-        ApiCreateNetworkCallBackOPService op = this.operations.get(i);
-        op.sendMessage(rollbackMessage,false);
-        i--;
-    }
 
     def String reportAllOperationsComplete(String message){
         i =0;

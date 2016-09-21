@@ -1,9 +1,6 @@
 package zstackui
 
-import grails.transaction.Transactional
 
-interface ApiService {
-
-    def void onSuccess(Boolean response);
-    def void onError();
+interface Runner {
+   def void run(Callback cb);
 }

@@ -122,6 +122,8 @@ class SyncRabbitmqService {
             System.out.pritnln("get message failed!");
             log.info "get message failed!"
         }
+
+
 		
     }
 
