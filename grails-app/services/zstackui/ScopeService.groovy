@@ -37,6 +37,25 @@ abstract class ScopeService {
 
     }
 
+	void rollbackStep(ListIterator it){
+		if (!it.hasPrevious()){
+			println "rollback finished!"
+		}
+
+		Runner runner = it.previous();
+		runner.rollback(new Callback() {
+			@Override
+			void success() {
+				rollbackStep(it);
+			}
+
+			@Override
+			void failed(int i) {
+
+			}
+		})
+	}
+
     void start() {
         setup()
         ListIterator<Runner> it = steps.listIterator();

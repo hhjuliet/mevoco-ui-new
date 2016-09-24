@@ -10,7 +10,7 @@ class ApiCreateNetworkController {
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    private ApiCreateNetworkService apiCreateNetworkService
+    private ApiCreateNetworkNewService apiCreateNetworkNewService
 
     @Autowired
     public ApiCreateNetworkController(SimpMessagingTemplate messagingTemplate){
@@ -20,8 +20,8 @@ class ApiCreateNetworkController {
     @MessageMapping("/networkmessage")
     protected String send(NetworkCreateMessage networkCreateMessage) {
         println "enter..."
-        apiCreateNetworkService = new ApiCreateNetworkService(this,networkCreateMessage)
-        apiCreateNetworkService.sendMessage()
+        apiCreateNetworkNewService = new ApiCreateNetworkNewService(this,networkCreateMessage)
+        apiCreateNetworkNewService.sendMessage()
     }
 
     def void messageListener(String message){
