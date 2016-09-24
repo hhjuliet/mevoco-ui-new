@@ -3,6 +3,7 @@ package zstackui
 import com.rabbitmq.client.*
 import grails.core.GrailsApplication
 import groovy.json.*
+import java.util.concurrent.*;
 
 class AsyncRabbitmqService{
 
@@ -22,7 +23,7 @@ class AsyncRabbitmqService{
 	def consumer
 	private final AsyncMessageController asyncMessageController
 	private RabbitmqCallbackService callBackService
-	private HashMap<String,RabbitmqCallbackService> envelops;
+	private ConcurrentHashMap<String,RabbitmqCallbackService> envelops;
 	def sendOrRollback;
 	def API_EVENT_QUEUE_BINDING_KEY;
 
@@ -30,7 +31,7 @@ class AsyncRabbitmqService{
 	def initialize(){}
 	
 	public AsyncRabbitmqService(){
-		envelops = new HashMap<String,RabbitmqCallbackService>();
+		envelops = new ConcurrentHashMap<String,RabbitmqCallbackService>();
 
 		this.P2P_EXCHANGE = "P2P"
 		this.REQUEST_QUEUE_NAME = "zstack.message.api.portal"
@@ -76,9 +77,7 @@ class AsyncRabbitmqService{
 		this.callBackService = callBackService;
 		this.sendOrRollback = sendOrRollback;
 		corrId = uuidService.getUuid();
-		synchronized (envelops){
-			envelops.put(corrId,callBackService);
-		}
+		envelops.put(corrId,callBackService);
 
 		//System.out.println("original1 message is: " + msg);
 		
@@ -127,18 +126,15 @@ class AsyncRabbitmqService{
 
 		def obj = parser.parseText(message).values()[0];
 		//def bodyHeaders = obj["headers"];
-		synchronized (envelops){
-			if (obj["apiId"]){
-				envelops.get(obj["apiId"]).success(message);
-				envelops.remove(obj["apiId"]);
-			}else if (obj["headers"]["correlationId"]){
-				envelops.get(obj["headers"]["correlationId"]).success(message);
-				envelops.remove(obj["headers"]["correlationId"]);
-			}else{
-				println "rabbitmq cannot get message correlativeId";
-			}
+		if (obj["apiId"]){
+			envelops.get(obj["apiId"]).success(message);
+			envelops.remove(obj["apiId"]);
+		}else if (obj["headers"]["correlationId"]){
+			envelops.get(obj["headers"]["correlationId"]).success(message);
+			envelops.remove(obj["headers"]["correlationId"]);
+		}else{
+			println "rabbitmq cannot get message correlativeId";
 		}
-
 	}
 }
 

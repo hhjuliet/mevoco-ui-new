@@ -30,7 +30,7 @@ class ApiCreateNetworkNewService{
 
 
     def sendMessage() {
-        new SimpleFlowChain() {
+        new SimpleGotoFlowChain() {
             String l2Uuid;
             String l3Uuid;
             String networkUuid;
@@ -42,7 +42,7 @@ class ApiCreateNetworkNewService{
 
             @Override
             def void setup() {
-                addFlow(new Flow() {
+                addFlow("step1",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         //create l2 network
@@ -52,8 +52,9 @@ class ApiCreateNetworkNewService{
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
                                     l2Uuid = obj["inventory"]["uuid"];
-                                    trigger.next();
+                                    trigger.next("step2");
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("create l2network background failed, reply message is: "+replyMessage);
                                 }
 
@@ -73,7 +74,7 @@ class ApiCreateNetworkNewService{
                     }
                 });
 
-                addFlow(new Flow() {
+                addFlow("step2",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         // create l3 network
@@ -83,8 +84,9 @@ class ApiCreateNetworkNewService{
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
                                     l3Uuid = obj["inventory"]["uuid"];
-                                    trigger.next();
+                                    trigger.next("step3");
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("create l3network background failed, reply message is: "+replyMessage);
                                 }
                             }
@@ -103,7 +105,7 @@ class ApiCreateNetworkNewService{
                     }
                 });
 
-                addFlow(new Flow() {
+                addFlow("step3",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         //addDnstol3
@@ -112,8 +114,9 @@ class ApiCreateNetworkNewService{
                             void success(String replyMessage) {
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
-                                    trigger.next();
+                                    trigger.next("step4");
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("adddns to l3network background failed, reply message is: "+replyMessage);
                                 }
                             }
@@ -132,7 +135,7 @@ class ApiCreateNetworkNewService{
                     }
                 });
 
-                addFlow(new Flow() {
+                addFlow("step4",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         // add ip range
@@ -141,8 +144,9 @@ class ApiCreateNetworkNewService{
                             void success(String replyMessage) {
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
-                                    trigger.next();
+                                    trigger.next("step5");
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("add ip range background failed, reply message is: "+replyMessage)
                                 }
                             }
@@ -161,7 +165,7 @@ class ApiCreateNetworkNewService{
                     }
                 });
 
-                addFlow(new Flow() {
+                addFlow("step5",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         //Query NetworkService ProviderMsg
@@ -173,8 +177,9 @@ class ApiCreateNetworkNewService{
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
                                     networkUuid = obj["inventories"][1]["uuid"];
-                                    trigger.next();
+                                    trigger.next("step6");
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("Query NetworkService background failed, reply message is:"+replyMessage);
                                 }
 
@@ -194,7 +199,7 @@ class ApiCreateNetworkNewService{
                     }
                 });
 
-                addFlow(new Flow() {
+                addFlow("step6",new Flow() {
                     @Override
                     public void run(FlowTrigger trigger){
                         // Attach NetworkService To L3NetworkMsg
@@ -204,8 +209,9 @@ class ApiCreateNetworkNewService{
                             void success(String replyMessage) {
                                 def obj = parser.parseText(replyMessage).values()[0];
                                 if (obj["success"] == true){
-                                    reportAllOperationsComplete(replyMessage);
+                                    sendMessageToController(replyMessage);
                                 }else{
+                                    sendMessageToController(replyMessage);
                                     trigger.failed("add ip range background failed, reply message is: "+replyMessage);
                                 }
                             }
@@ -418,7 +424,7 @@ class ApiCreateNetworkNewService{
 
 
 
-    def String reportAllOperationsComplete(String message){
+    def String sendMessageToController(String message){
         i =0;
         apiCreateNetworkController.messageListener(message);
         return "all step success!";

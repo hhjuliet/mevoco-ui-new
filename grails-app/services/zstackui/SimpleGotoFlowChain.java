@@ -7,10 +7,9 @@ import java.util.Stack;
 /**
  * Created by hhjuliet on 2016/9/24.
  */
-public abstract class SimpleGotoFlowChain implements FlowTrigger,FlowRollback  {
-	/*private HashMap<String,Flow> flows= new HashMap<>();
+abstract class SimpleGotoFlowChain implements FlowRollback,FlowTrigger{
+	private HashMap<String,Flow> flows= new HashMap<String,Flow>();
 	private Stack<Flow> rollbackFlows = new Stack<Flow>();
-	private Iterator<Flow> it;
 	private Boolean isStart = false;
 	private Boolean isRollback = false;
 	private Flow currentFlow;
@@ -56,7 +55,7 @@ public abstract class SimpleGotoFlowChain implements FlowTrigger,FlowRollback  {
 	@Override
 	public void failed(String errorCode){
 		System.out.println("error code is :"+errorCode);
-		rollbackFlows.push(currentFlow);
+		//rollbackFlows.push(currentFlow);
 		rollback();
 	}
 
@@ -67,7 +66,7 @@ public abstract class SimpleGotoFlowChain implements FlowTrigger,FlowRollback  {
 			System.out.println("no flow in flows");
 			return;
 		}
-		Flow flow = flows.get("step0");
+		Flow flow = flows.get("step1");
 		runFlow(flow);
 	}
 
@@ -82,6 +81,6 @@ public abstract class SimpleGotoFlowChain implements FlowTrigger,FlowRollback  {
 
 	private void rollbackFlow(Flow flow){
 		flow.rollback(this);
-	}*/
+	}
 
 }

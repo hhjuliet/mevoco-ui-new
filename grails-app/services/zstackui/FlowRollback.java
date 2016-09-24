@@ -3,6 +3,6 @@ package zstackui;
 /**
  * Created by hhjuliet on 2016/9/23.
  */
-public interface FlowRollback {
+interface FlowRollback {
 	void rollback();
 }

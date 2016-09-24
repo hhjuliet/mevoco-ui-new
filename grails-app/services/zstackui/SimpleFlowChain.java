@@ -8,7 +8,7 @@ import java.util.Stack;
 /**
  * Created by hhjuliet on 2016/9/23.
  */
-public abstract class SimpleFlowChain implements FlowRollback,FlowTrigger{
+/*public abstract class SimpleFlowChain implements FlowRollback,FlowTrigger{
 	private List<Flow> flows= new ArrayList<Flow>();
 	private Stack<Flow> rollbackFlows = new Stack<Flow>();
 	private Iterator<Flow> it;
@@ -85,4 +85,4 @@ public abstract class SimpleFlowChain implements FlowRollback,FlowTrigger{
 		flow.rollback(this);
 	}
 
-}
+}*/
