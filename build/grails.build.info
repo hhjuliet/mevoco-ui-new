@@ -1,0 +1,6 @@
+#Wed, 12 Oct 2016 10:07:14 +0800
+
+info.app.version=0.1
+info.app.name=mevoco-ui-new
+grails.env=production
+info.app.grailsVersion=3.1.7
