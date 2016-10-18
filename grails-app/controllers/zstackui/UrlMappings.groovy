@@ -9,7 +9,8 @@ class UrlMappings {
             }
         }
 
-        "/"(view:"/index")
+        "/"(redirect: [uri: "/static/index.html"])
+        //"/"(view:"/index")
         "500"(view:'/error')
         "404"(view:'/notFound')
     }

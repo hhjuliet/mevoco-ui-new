@@ -1,0 +1,49 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="layout" content="main"/>
+    <script type="text/javascript" src="js/sockjs.js"></script>
+    <script type="text/javascript" src="js/stomp.js"></script>
+    <script type="text/javascript" src="js/jquery-2.2.0.min.js"></script>
+
+    <script type="text/javascript">
+      $(function() {
+        var socket = new SockJS("http://localhost:8080/stomp");
+        var client = Stomp.over(socket);
+
+        client.connect({}, function() {
+          client.subscribe("/topic/networkmessage", function(message) {
+            $("#helloDiv").append(message.body);
+          });
+        });
+
+        var sendMessage = {
+                              "name": "test",
+                              "description": "hello world!",
+                              "l2type":"L2NoVlanNetwork",
+                              "l3type":"L3BasicNetwork",
+                              "type": "L2VlanNetwork",
+                              "zoneUuid": "0f9b9fba8b1b468ea04b668d035a09f6",
+                              "physicalInterface": "eth0",
+                              "vlan": 1,
+                              "system":"false",
+                              "sessionUuid": "d2bddb8e35bc4fc0ac33d3c3714538ad",
+                              "callid":"api-SVCwVkPC",
+                              "dns": "8.8.8.8",
+                              "ipRangename": "192.168.0.2",
+                              "startIp": "1000000",
+                              "endIp": "192.168.0.255",
+                              "gateway": "192.168.0.1",
+                              "netmask": "255.255.255.0"     
+                          }
+        $("#helloButton").click(function() {
+          client.send("/app/networkmessage", {}, JSON.stringify(sendMessage));
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <button id="helloButton">hello</button>
+    <div id="helloDiv"></div>
+  </body>
+</html>

@@ -1,0 +1,35 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="layout" content="main"/>
+    <script type="text/javascript" src="js/sockjs.js"></script>
+    <script type="text/javascript" src="js/stomp.js"></script>
+    <script type="text/javascript" src="js/jquery-2.2.0.min.js"></script>
+
+    <script type="text/javascript">
+      $(function() {
+        var socket = new SockJS("http://localhost:8080/stomp");
+        var client = Stomp.over(socket);
+        var sessionId = Math.random().toString(36).substring(7);
+        function sendMessage(){
+            client.send('/app/testws/' + sessionId, {}, 'Test');
+        }
+
+        client.connect({}, function() {
+          client.subscribe("/topic/testwsresponse/"+sessionId, function(message) {
+            $("#helloDiv").append(message.body);
+          });
+        });
+
+
+        $("#helloButton").click(function() {
+          sendMessage();
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <button id="helloButton">hello</button>
+    <div id="helloDiv"></div>
+  </body>
+</html>
